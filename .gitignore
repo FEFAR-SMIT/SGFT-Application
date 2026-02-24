@@ -1,0 +1,11 @@
+virtual_env/
+src/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+*.log
+output/
+coordinates_cache.json
+wind_adjacency_matrix0.csv
+data/
