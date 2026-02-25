@@ -20,9 +20,8 @@ def build_graph(df, coordinates, radius_km=200, angle_segment_size=5):
 
     graph = defaultdict(list)
     cities = [city for city in df['District'].unique() if city in coordinates]
+    print("Building Graph: \n")
     for idx, city1 in enumerate(cities, 1):
-        if idx % 10 == 0 or idx == 1:
-            print(f"Processing city {idx}/{len(cities)}...")
         lat1, lon1 = coordinates[city1]
         # Store candidates for each angle segment
         angle_segments = defaultdict(list)
@@ -48,6 +47,7 @@ def build_graph(df, coordinates, radius_km=200, angle_segment_size=5):
                 'bearing': bearing,
                 'segment': segment
             })
+    print("Graph generated successfully\n")
     return graph
 
 

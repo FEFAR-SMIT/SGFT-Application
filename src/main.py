@@ -1,4 +1,6 @@
 import pandas as pd
+import numpy as np
+from pygsp import graphs
 from visualize_pygsp_graph import visualize_pygsp_graph
 from save_pygsp_graph import save_pygsp_graph
 from build_pygsp_graph import build_pygsp_graph
@@ -26,16 +28,14 @@ def main():
     )
     print(f"\nMatrix size: {adj_matrix.shape}")
 
-    # # Save adjacency matrix to csv file
-    # adj_df = pd.DataFrame(adj_matrix, index=city_order, columns=city_order)
-    # adj_df.to_csv('wind_adjacency_matrix.csv')
+    # Save adjacency matrix to csv file
+    adj_df = pd.DataFrame(adj_matrix, index=city_order, columns=city_order)
+    adj_df.to_csv('wind_adjacency_matrix.csv')
 
     # Computing eigen values and eigen vectors using hermitian method for directed graph
-    results_from_hermitian_method = compute_hermitian_random_walk_laplacian(adj_matrix, 0.01, True)
-    print("\nResult from hermitian method of computing eigen values and eigen vectors:\n")
-    print(results_from_hermitian_method)
-    print("\n")
-
+    results_from_hermitian_method = compute_hermitian_random_walk_laplacian(adj_matrix, 0.01, False)
+    # print("results_from_hermitian_method: \n")
+    # print(results_from_hermitian_method, "\n")
     # BUILD PYGSP GRAPH
     pygsp_graph = build_pygsp_graph(adj_matrix, city_order, coordinates)
     if pygsp_graph is not None:

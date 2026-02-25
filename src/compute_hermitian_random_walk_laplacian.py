@@ -1,3 +1,9 @@
+from pprint import pformat
+import numpy as np
+import json
+from to_json_format import to_jsonable
+from scipy import linalg
+
 def compute_hermitian_random_walk_laplacian(W, q=0.01, verbose=True):
     """
     Compute the Unnormalized Hermitian Random Walk Laplacian for a directed graph.
@@ -20,16 +26,17 @@ def compute_hermitian_random_walk_laplacian(W, q=0.01, verbose=True):
         - Pi: Stationary distribution (diagonal matrix)
         - P_tilde: Symmetric transition matrix
         - P_tilde_hermitian: Hermitian transition matrix
+        - GFT: Graph fourier transform
+        - IGFT: Inverse graph fourier transform
     """
-    import numpy as np
-    from scipy import linalg
+    
     N = W.shape[0]
     out_degree = W.sum(axis=1)
     
     # Handle nodes with zero out-degree to avoid division by zero
     out_degree[out_degree == 0] = 1
     # Transition probabilities
-    P = W / out_degree[np.newaxis, :]
+    P = W / out_degree[:, np.newaxis]
 
     # Solve πP = π (or equivalently P^T π = π)
     # This is the left eigenvector of P with eigenvalue 1
@@ -42,11 +49,6 @@ def compute_hermitian_random_walk_laplacian(W, q=0.01, verbose=True):
     pi = pi / pi.sum()
     # Create diagonal matrix Π
     Pi = np.diag(pi)
-    
-    if verbose:
-        print(f"Stationary distribution π: {pi}")
-        print(f"Sum of π: {pi.sum():.6f}")
-
     P_tilde = 0.5 * (Pi @ P + P.T @ Pi)
     Gamma_q = np.ones((N, N), dtype=complex)
     for i in range(N):
@@ -59,11 +61,10 @@ def compute_hermitian_random_walk_laplacian(W, q=0.01, verbose=True):
     # Computing Hermitian transition matrix
     # Element-wise (Hadamard) product
     P_tilde_hermitian = Gamma_q * P_tilde
-    
+    # Check Hermitian property: P̃ = P̃^H
+    is_hermitian = np.allclose(P_tilde_hermitian, P_tilde_hermitian.conj().T)
     if verbose:
         print(f"Hermitian P̃ computed")
-        # Check Hermitian property: P̃ = P̃^H
-        is_hermitian = np.allclose(P_tilde_hermitian, P_tilde_hermitian.conj().T)
         print(f"P̃ is Hermitian: {is_hermitian}")
     
     # Computing Laplacian
@@ -80,7 +81,12 @@ def compute_hermitian_random_walk_laplacian(W, q=0.01, verbose=True):
     sort_idx = np.argsort(eigenvalues_real)
     eigenvalues_sorted = eigenvalues_real[sort_idx]
     eigenvectors_sorted = eigenvectors[:, sort_idx]
-    
+
+    signal= np.sum(W, axis=1).reshape(-1)
+    # GFT
+    x_gft = eigenvectors.conj().T @ signal   
+    # IGFT
+    x_igft = eigenvectors @ x_gft  
     results = {
         'L_hrw': L_hrw,
         'eigenvalues': eigenvalues_sorted,
@@ -92,6 +98,15 @@ def compute_hermitian_random_walk_laplacian(W, q=0.01, verbose=True):
         'P_tilde_hermitian': P_tilde_hermitian,
         'Gamma_q': Gamma_q,
         'is_hermitian': is_hermitian,
-        'q': q
+        'q': q,
+        'GFT' : x_gft,
+        'IGFT' : x_igft 
     }
+    json_ready = to_jsonable({'eigenvalues': eigenvalues_sorted,
+        'eigenvectors': eigenvectors_sorted,'is_hermitian': is_hermitian})
+    with open("output/hermitian_rw_results.json", "w") as f:
+        json.dump(json_ready, f, indent=2)
+   
     return results
+
+
